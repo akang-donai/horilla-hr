@@ -1,7 +1,10 @@
 {% load i18n horillafilters %}
 {% get_company as theme_obj %}
 <h5 class="oh-job__post">{{ recruitment.title }}</h5>
-<p class="oh-onboarding__content oh-job__post_description">{{ recruitment.description|safe }}</p>
+{% comment %} div, not p: the rich-text description contains block elements
+   (ul/ol), which an HTML parser hoists out of a <p>, breaking descendant CSS
+   selectors. {% endcomment %}
+<div class="oh-onboarding__content oh-job__post_description">{{ recruitment.description|safe }}</div>
 <span class="fw-bold d-block"> {% trans "Job positions :" %}</span>
 <ul class="oh-job__description-list mt-3">
     {% for job in recruitment.open_positions.all %}

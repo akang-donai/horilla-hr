@@ -4653,3 +4653,23 @@ th[id$="mail_indication-header"] {
 textarea[data-summernote]:has(+ .note-editor) {
   display: none !important;
 }
+
+/* Tailwind's preflight (ol,ul,menu{list-style:none;margin:0;padding:0}) — both
+   the static tailwind.css copy and the runtime-injected one from tailwindcdn.js
+   — strips markers and indentation from every plain list, which makes the
+   summernote UL/OL toolbar buttons appear to do nothing. Restore browser
+   defaults inside the editor and wherever rich-text descriptions render. */
+.note-editable ul,
+.oh-job__post_description ul,
+.oh-onboarding-preview ul {
+  list-style: disc;
+  margin: 0 0 1em 1.5em;
+  padding: 0;
+}
+.note-editable ol,
+.oh-job__post_description ol,
+.oh-onboarding-preview ol {
+  list-style: decimal;
+  margin: 0 0 1em 1.5em;
+  padding: 0;
+}

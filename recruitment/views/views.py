@@ -3177,13 +3177,20 @@ def open_recruitments(request):
     return response
 
 
-@login_required
 @hx_request_required
 def recruitment_details(request, id):
     """
     This method is used to render the recruitment details page
     """
+    # The public open-recruitments page renders a "View" button for anonymous
+    # visitors, so this endpoint cannot demand login. Anonymous users may only
+    # see recruitments that are actually published on that page; everything
+    # else stays behind authentication.
     recruitment = Recruitment.default.get(id=id)
+    if not request.user.is_authenticated and not (
+        recruitment.is_published and not recruitment.closed
+    ):
+        return HttpResponse(status=403)
     context = {
         "recruitment": recruitment,
     }

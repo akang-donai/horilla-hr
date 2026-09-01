@@ -252,6 +252,20 @@ class RecruitmentCreationFormExtended(RecruitmentCreationForm):
             self.fields["publish_in_linkedin"].initial = False
             self.fields["publish_in_linkedin"].widget = forms.HiddenInput()
             self.fields["linkedin_account_id"].widget = forms.HiddenInput()
+            # The model defaults publish_in_linkedin to True, so a record
+            # created outside this form (e.g. via the API) re-emits True
+            # through the hidden input and trips the "LinkedIn account is
+            # required" validation on a field the user cannot see — Save
+            # then fails with no visible error.
+            self.initial["publish_in_linkedin"] = False
+
+    def clean_publish_in_linkedin(self):
+        value = self.cleaned_data.get("publish_in_linkedin")
+        if not IntegrationApps.objects.filter(
+            app_label="linkedin", is_enabled=True
+        ).exists():
+            return False
+        return value
 
 
 @method_decorator(login_required, name="dispatch")

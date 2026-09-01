@@ -1010,3 +1010,21 @@ form label {
 .oh-profile-settings__fade-leave-end {
     opacity: 0;
 }
+
+/* The global ul:not(.ul) reset above strips bullets from every plain list,
+   including summernote content and rendered job descriptions. Restore browser
+   defaults there. */
+.note-editable ul,
+.oh-job__post_description ul,
+.oh-onboarding-preview ul {
+  list-style: disc;
+  margin: 0 0 1em 1.5em;
+  padding: 0;
+}
+.note-editable ol,
+.oh-job__post_description ol,
+.oh-onboarding-preview ol {
+  list-style: decimal;
+  margin: 0 0 1em 1.5em;
+  padding: 0;
+}
