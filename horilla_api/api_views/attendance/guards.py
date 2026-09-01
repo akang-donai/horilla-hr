@@ -1,6 +1,7 @@
 """Pre-conditions applied to clock-in / clock-out API calls."""
 import logging
 
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from geopy.distance import geodesic
 from rest_framework.response import Response
@@ -47,3 +48,35 @@ def geofence_guard(request):
     except Exception:
         logger.exception("Geofence check failed; rejecting (fail closed)")
         return _outside()
+
+
+def face_guard(request):
+    """Verify the uploaded selfie when STRICT_FACE_ATTENDANCE is on."""
+    if not getattr(settings, "STRICT_FACE_ATTENDANCE", False):
+        return None
+    from facedetection.services import FaceNotEnrolled, verify_employee_face
+
+    image = request.FILES.get("image")
+    if image is None:
+        return Response(
+            {"error_code": "face_mismatch",
+             "error": _("A selfie image is required to clock in or out.")},
+            status=403,
+        )
+    try:
+        verified, _distance = verify_employee_face(request.user.employee_get, image)
+    except FaceNotEnrolled:
+        return Response(
+            {"error_code": "not_enrolled",
+             "error": _("No enrolled face image. Please enroll first.")},
+            status=400,
+        )
+    except Exception:
+        logger.exception("Face verification error; rejecting (fail closed)")
+        verified = False
+    if verified:
+        return None
+    return Response(
+        {"error_code": "face_mismatch", "error": _("Face verification failed.")},
+        status=403,
+    )

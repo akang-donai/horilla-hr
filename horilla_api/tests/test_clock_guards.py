@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 
-from horilla_api.api_views.attendance.guards import geofence_guard
+from horilla_api.api_views.attendance.guards import face_guard, geofence_guard
 
 
 def _req(lat=None, lng=None):
@@ -56,3 +56,41 @@ class GeofenceGuardTests(SimpleTestCase):
         req = _req(lat="garbage", lng=None)
         self._wire(req, self._fence())
         self.assertEqual(geofence_guard(req).status_code, 403)
+
+
+class FaceGuardTests(SimpleTestCase):
+    def _req(self, with_image=True):
+        r = MagicMock()
+        r.FILES = {"image": MagicMock()} if with_image else {}
+        return r
+
+    @override_settings(STRICT_FACE_ATTENDANCE=False)
+    def test_flag_off_allows(self):
+        self.assertIsNone(face_guard(self._req(with_image=False)))
+
+    @override_settings(STRICT_FACE_ATTENDANCE=True)
+    def test_missing_image_rejected(self):
+        res = face_guard(self._req(with_image=False))
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data["error_code"], "face_mismatch")
+
+    @override_settings(STRICT_FACE_ATTENDANCE=True)
+    @patch("facedetection.services.verify_employee_face")
+    def test_match_allows(self, verify):
+        verify.return_value = (True, 0.3)
+        self.assertIsNone(face_guard(self._req()))
+
+    @override_settings(STRICT_FACE_ATTENDANCE=True)
+    @patch("facedetection.services.verify_employee_face")
+    def test_mismatch_rejected(self, verify):
+        verify.return_value = (False, 0.9)
+        self.assertEqual(face_guard(self._req()).status_code, 403)
+
+    @override_settings(STRICT_FACE_ATTENDANCE=True)
+    @patch("facedetection.services.verify_employee_face")
+    def test_not_enrolled_400(self, verify):
+        from facedetection.services import FaceNotEnrolled
+        verify.side_effect = FaceNotEnrolled()
+        res = face_guard(self._req())
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data["error_code"], "not_enrolled")

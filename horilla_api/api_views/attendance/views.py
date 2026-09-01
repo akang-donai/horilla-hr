@@ -70,9 +70,12 @@ class ClockInAPIView(APIView):
 
     def post(self, request):
         if not request.user.employee_get.check_online():
-            from .guards import geofence_guard
+            from .guards import face_guard, geofence_guard
 
             blocked = geofence_guard(request)
+            if blocked is not None:
+                return blocked
+            blocked = face_guard(request)
             if blocked is not None:
                 return blocked
             employee, work_info = employee_exists(request)
@@ -146,9 +149,12 @@ class ClockOutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        from .guards import geofence_guard
+        from .guards import face_guard, geofence_guard
 
         blocked = geofence_guard(request)
+        if blocked is not None:
+            return blocked
+        blocked = face_guard(request)
         if blocked is not None:
             return blocked
         if request.user.employee_get.check_online():
