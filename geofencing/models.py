@@ -17,6 +17,17 @@ class GeoFencing(models.Model):
         null=True,
     )
     start = models.BooleanField(default=False)
+    exempt_departments = models.ManyToManyField(
+        "base.Department",
+        blank=True,
+        related_name="geofence_exemptions",
+        help_text=_("Departments exempt from the geofence check."),
+    )
+
+    def is_department_exempt(self, department):
+        if department is None:
+            return False
+        return self.exempt_departments.filter(pk=department.pk).exists()
 
     def clean(self):
         if self.company_id is None:
