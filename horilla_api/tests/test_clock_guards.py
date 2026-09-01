@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import SimpleTestCase, override_settings
 
 from horilla_api.api_views.attendance.guards import face_guard, geofence_guard
 
