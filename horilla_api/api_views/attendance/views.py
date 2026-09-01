@@ -70,16 +70,11 @@ class ClockInAPIView(APIView):
 
     def post(self, request):
         if not request.user.employee_get.check_online():
-            try:
-                if request.user.employee_get.get_company().geo_fencing.start:
-                    from geofencing.views import GeoFencingEmployeeLocationCheckAPIView
+            from .guards import geofence_guard
 
-                    location_api_view = GeoFencingEmployeeLocationCheckAPIView()
-                    response = location_api_view.post(request)
-                    if response.status_code != 200:
-                        return response
-            except:
-                pass
+            blocked = geofence_guard(request)
+            if blocked is not None:
+                return blocked
             employee, work_info = employee_exists(request)
             datetime_now = datetime.now()
             if request.__dict__.get("datetime"):
@@ -151,17 +146,11 @@ class ClockOutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from .guards import geofence_guard
 
-        try:
-            if request.user.employee_get.get_company().geo_fencing.start:
-                from geofencing.views import GeoFencingEmployeeLocationCheckAPIView
-
-                location_api_view = GeoFencingEmployeeLocationCheckAPIView()
-                response = location_api_view.post(request)
-                if response.status_code != 200:
-                    return response
-        except:
-            pass
+        blocked = geofence_guard(request)
+        if blocked is not None:
+            return blocked
         if request.user.employee_get.check_online():
             current_date = date.today()
             current_time = datetime.now().time()
