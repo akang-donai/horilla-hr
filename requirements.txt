@@ -85,3 +85,7 @@ packaging
 
 # Testing
 coverage>=7.0
+
+# Face verification
+deepface==0.0.93
+tf-keras

@@ -14,3 +14,9 @@ class FacedetectionConfig(AppConfig):
             path("api/facedetection/", include("facedetection.urls")),
         )
         super().ready()
+
+        from django.conf import settings
+        if getattr(settings, "STRICT_FACE_ATTENDANCE", False):
+            from threading import Thread
+            from .services import warm_up
+            Thread(target=warm_up, daemon=True).start()
