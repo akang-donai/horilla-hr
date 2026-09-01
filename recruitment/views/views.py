@@ -3186,7 +3186,7 @@ def recruitment_details(request, id):
     # visitors, so this endpoint cannot demand login. Anonymous users may only
     # see recruitments that are actually published on that page; everything
     # else stays behind authentication.
-    recruitment = Recruitment.default.get(id=id)
+    recruitment = get_object_or_404(Recruitment.default, id=id)
     if not request.user.is_authenticated and not (
         recruitment.is_published and not recruitment.closed
     ):
