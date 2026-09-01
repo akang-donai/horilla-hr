@@ -85,6 +85,7 @@ class LoginAPIView(APIView):
                 result = {
                     "employee": GetEmployeeSerializer(employee).data,
                     "access": str(refresh.access_token),
+                    "refresh": str(refresh),
                     "face_detection": face_detection,
                     "face_detection_image": face_detection_image,
                     "geo_fencing": geo_fencing,
