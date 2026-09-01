@@ -426,8 +426,9 @@
             });
           })
 
+            {# The job-position and gender selects carry only `oh-select-2`, so matching `.oh-select` alone leaves them as bare selects. #}
             setTimeout(function () {
-                $(".oh-select").select2();
+                $(".oh-select, .oh-select-2").select2();
             }, 100);
         })
       </script>
