@@ -13,7 +13,7 @@ def _req(lat=None, lng=None):
     return r
 
 
-class GeofenceGuardTests(TestCase):
+class GeofenceGuardTests(SimpleTestCase):
     def _fence(self, exempt=False, start=True):
         fence = MagicMock()
         fence.start = start
