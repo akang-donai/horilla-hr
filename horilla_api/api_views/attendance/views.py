@@ -911,49 +911,44 @@ class CheckingStatus(APIView):
         return f"{hours:02}:{minutes:02}:{seconds:02}"
 
     def get(self, request):
-        attendance_activity = (
-            AttendanceActivity.objects.filter(employee_id=request.user.employee_get)
-            .order_by("-id")
+        employee = request.user.employee_get
+        work_seconds = employee.get_forecasted_at_work()["forecasted_at_work_seconds"]
+        duration = CheckingStatus._format_seconds(int(work_seconds))
+
+        # Clock-in/out gate on Employee.check_online(), which treats any open
+        # session from yesterday or today as "clocked in". Answer from the same
+        # open-session truth here rather than a today-only lookup, or the client
+        # is told to clock in and then rejected with "Already clocked-in".
+        open_activity = (
+            AttendanceActivity.objects.filter(
+                employee_id=employee, clock_out__isnull=True
+            )
+            .order_by("-in_datetime", "-id")
             .first()
         )
-        duration = None
-        work_seconds = request.user.employee_get.get_forecasted_at_work()[
-            "forecasted_at_work_seconds"
-        ]
-        duration = CheckingStatus._format_seconds(int(work_seconds))
-        status = False
-        clock_in_time = None
+        if open_activity is not None:
+            return Response(
+                {
+                    "status": True,
+                    "duration": duration,
+                    "clock_in": open_activity.clock_in.strftime("%I:%M %p"),
+                },
+                status=200,
+            )
 
-        today = datetime.now()
-        attendance_activity_first = (
+        # Not clocked in: report today's first clock-in time, if any, for display.
+        first_today = (
             AttendanceActivity.objects.filter(
-                employee_id=request.user.employee_get, clock_in_date=today
+                employee_id=employee, clock_in_date=date.today()
             )
             .order_by("in_datetime")
             .first()
         )
-        if attendance_activity:
-            try:
-                clock_in_time = attendance_activity_first.clock_in.strftime("%I:%M %p")
-                if attendance_activity.clock_out_date:
-                    status = False
-                else:
-                    status = True
-                    return Response(
-                        {
-                            "status": status,
-                            "duration": duration,
-                            "clock_in": clock_in_time,
-                        },
-                        status=200,
-                    )
-            except:
-                return Response(
-                    {"status": status, "duration": duration, "clock_in": clock_in_time},
-                    status=200,
-                )
+        clock_in_time = (
+            first_today.clock_in.strftime("%I:%M %p") if first_today else None
+        )
         return Response(
-            {"status": status, "duration": duration, "clock_in_time": clock_in_time},
+            {"status": False, "duration": duration, "clock_in": clock_in_time},
             status=200,
         )
 
