@@ -204,6 +204,22 @@ urlpatterns.append(
 
 
 def white_labelling_company(request):
+    """
+    Page title / favicon branding.
+
+    BRAND_NAME, when set, brands every page with a fixed product name and the
+    static favicons regardless of company, so a multi-company deployment can
+    present one product (e.g. "NIRA") while each company keeps its own logo
+    inside the app. Without BRAND_NAME the upstream behaviour applies:
+    WHITE_LABELLING swaps in the user's company name and icon, else "Horilla".
+    """
+    brand_name = getattr(settings, "BRAND_NAME", None)
+    if brand_name:
+        return {
+            "white_label_company_name": brand_name,
+            "white_label_company": None,
+        }
+
     white_labelling = getattr(settings, "WHITE_LABELLING", False)
     if white_labelling:
         hq = Company.objects.filter(hq=True).last()

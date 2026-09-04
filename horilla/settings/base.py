@@ -359,6 +359,9 @@ DJANGO_NOTIFICATIONS_CONFIG = {
 # HORILLA-SPECIFIC SETTINGS
 # ========================================
 WHITE_LABELLING = False
+# Fixed product name for page titles/favicons across all companies; None keeps
+# upstream behaviour (company name under WHITE_LABELLING, else "Horilla").
+BRAND_NAME = env("BRAND_NAME", default=None)
 NESTED_SUBORDINATE_VISIBILITY = False
 TWO_FACTORS_AUTHENTICATION = False
 
