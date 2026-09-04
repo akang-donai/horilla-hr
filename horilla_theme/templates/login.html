@@ -115,12 +115,11 @@
 
         <div class="h-screen w-full flex items-center justify-center">
             <div class="bg-[{{theme_obj.primary_200}}] p-[50px] rounded-2xl [box-shadow:0px_0px_25px_#a1a1a1] w-[450px]">
-                {# The logo carries the branding on its own now that the heading is gone, so it needs a real alt text. Width only: the intrinsic 600x225 ratio then scales the height. #}
+                {# The logo carries the branding on its own now that the heading is gone, so it needs a real alt text. `w-full` matches the inputs below, which are `w-full` too, so both edges line up; `h-auto` then scales the height from the intrinsic ratio. The max height keeps a square company icon from filling the card -- `object-contain` letterboxes it rather than squashing it. #}
                 <img
                     src="{% if white_label_company.icon %}{{white_label_company.icon.url}}{% else %}{% static 'horilla_theme/assets/img/logo.svg' %}{% endif %}"
                     alt="{{ white_label_company_name }}"
-                    class="m-auto mb-6"
-                    width="200"
+                    class="w-full h-auto max-h-[140px] object-contain mb-6"
                 >
                 <p class="mb-5 text-center text-sm text-color-600">
                     {% trans "Please login to access the dashboard." %}
