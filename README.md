@@ -4,9 +4,6 @@
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
 
-> [!IMPORTANT]
-> **`2.0` is now this repository’s default branch.** Use it to run or deploy Horilla (a plain `git clone` checks it out). To contribute code, branch from and open PRs against `dev/v2.0` — GitHub still pre-selects `2.0` as the PR base, so switch it manually. v1 (`1.0`/`master`) is deprioritized, with fixes considered case-by-case rather than on a guaranteed schedule. Full details → [Discussion #1127](https://github.com/horilla/horilla-hr/discussions/1127).
-
 > **A comprehensive, free, and open-source Human Resource Management System (HRMS) designed to streamline HR operations and enhance organizational efficiency.**
 
 ## 🚀 Features
@@ -33,14 +30,6 @@
 - [Security](#-security)
 - [Support](#-support)
 - [License](#-license)
-
-## 🌳 Which Branch Do I Want?
-
-- **`2.0`** (default) — the latest stable v2 snapshot. This is what a plain `git clone` gives you. Use it to run or deploy Horilla.
-- **`dev/v2.0`** — the active integration branch. If you want to contribute code, branch from and open PRs against this, not `2.0`.
-- **`1.0`/`master`** — v1, now deprioritized (fixes considered case-by-case, no guaranteed schedule). Not deleted, but no longer where active development happens.
-
-See [Discussion #1127](https://github.com/horilla/horilla-hr/discussions/1127) for full background on this transition.
 
 ## ⚡ Quick Start
 
