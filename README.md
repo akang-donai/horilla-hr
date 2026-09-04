@@ -150,26 +150,6 @@ Please report security vulnerabilities via [GitHub Private Vulnerability Reporti
 - Use strong passwords and enable 2FA
 - Monitor logs for suspicious activities
 
-## 📞 Support
-
-### Community Support
-
-- 📖 **Documentation**: [docs.horilla.com](https://docs.horilla.com)
-- 💬 **GitHub Discussions**: [GitHub Discussions](https://github.com/horilla/horilla-hr/discussions)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/horilla/horilla-hr/issues)
-- ✨ **Feature Requests**: [GitHub Issues](https://github.com/horilla/horilla-hr/issues)
-
-### Professional Support
-
-For enterprise support, custom development, and consulting services:
-- 📧 **Email**: support@horilla.com
-- 🌐 **Website**: [www.horilla.com](https://www.horilla.com)
-
-
-## 📄 License
-
-This project is licensed under the [LGPL-2.1 License](LICENSE) - see the LICENSE file for details.
-
 <div align="center">
 
 **Made with ❤️ by the Horilla Team**
