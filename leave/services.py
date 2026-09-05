@@ -5,6 +5,8 @@ Centralised business-logic helpers for the leave app.
 Condition evaluation follows the same pattern as payroll allowance eligibility checks.
 """
 
+from datetime import date
+
 from django.utils.translation import gettext_lazy as _
 
 
@@ -99,6 +101,31 @@ def evaluate_leave_type_conditions(leave_type, employee):
                 return False, _(
                     "This leave type is restricted to employees with grade: {grade}."
                 ).format(grade=condition.value)
+
+        elif ctype == "service_duration":
+            # Value is the minimum tenure in years (fractions allowed), measured
+            # from work-info date_joining. An employee with no joining date on
+            # record cannot prove tenure, so they are treated as ineligible
+            # rather than silently passing.
+            try:
+                required_years = float(condition.value)
+            except (TypeError, ValueError):
+                return False, _(
+                    "Service duration condition has an invalid value: {value}."
+                ).format(value=condition.value)
+            work_info = getattr(employee, "employee_work_info", None)
+            joined = getattr(work_info, "date_joining", None) if work_info else None
+            if not joined:
+                return False, _(
+                    "This leave type requires {years} years of service, but the "
+                    "employee has no joining date on record."
+                ).format(years=condition.value)
+            tenure_years = (date.today() - joined).days / 365.25
+            if tenure_years < required_years:
+                return False, _(
+                    "This leave type requires {years} years of service; the "
+                    "employee has {actual:.1f}."
+                ).format(years=condition.value, actual=tenure_years)
 
     return True, None
 

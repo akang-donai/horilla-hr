@@ -1,11 +1,25 @@
 {% load i18n %}
-{% if instance.conditions.exists %}
-  {% for condition in instance.conditions.all %}
-    <span class="oh-badge oh-badge--info"
-          style="font-size:0.72rem; margin:1px 2px; display:inline-block;">
-      {{ condition }}
-    </span>
-  {% endfor %}
-{% else %}
-  <span class="text-muted">{% trans "None" %}</span>
-{% endif %}
+{# Column/detail cell for a leave type's eligibility conditions. Rendered via
+   render_template(), so `perms` comes from the auth context processor. #}
+<div id="leaveTypeConditions_{{ instance.id }}">
+  {% if instance.conditions.exists %}
+    {% for condition in instance.conditions.all %}
+      <span class="oh-badge oh-badge--info"
+            style="font-size:0.72rem; margin:1px 2px; display:inline-block;">
+        {{ condition }}
+      </span>
+    {% endfor %}
+  {% else %}
+    <span class="text-muted">{% trans "None" %}</span>
+  {% endif %}
+  {% if perms.leave.change_leavetype %}
+    {# Loads the add/remove panel in place; the panel's own HTMX calls keep
+       swapping themselves, so this cell becomes the editor. #}
+    <a role="button" class="text-primary-600 d-block mt-1" style="font-size:0.78rem;"
+       hx-get="{% url 'leave-type-conditions-panel' instance.id %}"
+       hx-target="#leaveTypeConditions_{{ instance.id }}"
+       hx-swap="innerHTML">
+      {% trans "Manage conditions" %}
+    </a>
+  {% endif %}
+</div>

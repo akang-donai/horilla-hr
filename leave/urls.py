@@ -141,6 +141,11 @@ urlpatterns = [
         views.leave_type_condition_delete,
         name="leave-type-condition-delete",
     ),
+    path(
+        "leave-type/<int:leave_type_id>/conditions/",
+        views.leave_type_conditions_panel,
+        name="leave-type-conditions-panel",
+    ),
     # path("type-view/", views.leave_type_view, name="type-view"),
     path(
         "leave-type-individual-view/<int:id>/",

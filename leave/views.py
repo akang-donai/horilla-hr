@@ -5806,3 +5806,26 @@ def leave_type_condition_delete(request, leave_type_id, condition_id):
             "condition_form": LeaveTypeConditionForm(),
         },
     )
+
+
+@login_required
+@hx_request_required
+@permission_required("leave.change_leavetype")
+def leave_type_conditions_panel(request, leave_type_id):
+    """
+    HTMX GET: render the eligibility-conditions panel for a LeaveType.
+
+    The create/delete endpoints above already return this panel after a
+    change; this is the entry point that loads it in the first place (from the
+    leave type detail view), which was previously missing — the feature was
+    unreachable from the UI.
+    """
+    leave_type = get_object_or_404(LeaveType, id=leave_type_id)
+    return render(
+        request,
+        "leave/leave_type/conditions_panel.html",
+        {
+            "leave_type": leave_type,
+            "condition_form": LeaveTypeConditionForm(),
+        },
+    )
