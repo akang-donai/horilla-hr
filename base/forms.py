@@ -2915,6 +2915,19 @@ class MultipleApproveConditionForm(ModelForm):
             (employee.pk, str(employee)) for employee in Employee.objects.all()
         ]
         self.fields["multi_approval_manager"].choices = choices
+        # The value input depends on BOTH the field (leave type -> select of
+        # leave types) and the operator (range -> two inputs), so either change
+        # re-renders it and both current values ride along on the request.
+        value_reload = {
+            "hx-trigger": "change",
+            "hx-target": "#conditionValueDiv",
+            "hx-get": "condition-value-fields",
+            "hx-include": "[name='condition_field'],[name='condition_operator']",
+        }
+        self.fields["condition_field"].widget.attrs.update(
+            {"class": "oh-select oh-select-2 mb-2", **value_reload}
+        )
+        self.fields["condition_operator"].widget.attrs.update(value_reload)
 
 
 class MultipleFileInput(forms.ClearableFileInput):

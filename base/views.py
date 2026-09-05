@@ -6948,10 +6948,22 @@ def hx_multiple_approval_condition(request):
 @hx_request_required
 @permission_required("base.add_multipleapprovalcondition")
 def get_condition_value_fields(request):
+    from leave.models import LeaveType  # local: leave imports base at module level
+
     operator = request.GET.get("condition_operator")
+    condition_field = request.GET.get("condition_field")
     form = MultipleApproveConditionForm()
     is_range = True if operator and operator == "range" else False
-    context = {"form": form, "range": is_range}
+    context = {
+        "form": form,
+        "range": is_range,
+        "condition_field": condition_field,
+        # A leave-type condition is a foreign key, so the value input becomes a
+        # select of the leave types the current company can see.
+        "leave_types": (
+            LeaveType.objects.all() if condition_field == "leave_type" else None
+        ),
+    }
     field_html = render_to_string(
         "multi_approval_condition/condition_value_fields.html", context
     )
@@ -7151,6 +7163,8 @@ def multiple_level_approval_edit(request, condition_id):
             ::-1
         ]
 
+    from leave.models import LeaveType  # local: leave imports base at module level
+
     return render(
         request,
         "multi_approval_condition/condition_edit_form.html",
@@ -7160,6 +7174,7 @@ def multiple_level_approval_edit(request, condition_id):
             "create": create,
             "condition": condition,
             "managers_count": len(managers),
+            "leave_types": LeaveType.objects.all(),
         },
     )
 

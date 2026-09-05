@@ -53,6 +53,48 @@ operator_mapping = {
     "ge": operator.ge,
     "icontains": operator.contains,
 }
+
+
+def approval_condition_matches(condition, leave_request):
+    """
+    Does a MultipleApprovalCondition apply to this leave request?
+
+    Dispatches on ``condition.condition_field``. ``requested_days`` keeps the
+    numeric operators (including ``range``); ``leave_type`` compares the
+    request's leave type id with ``equal`` / ``notequal`` only — the other
+    operators have no meaning for a foreign key and never match.
+    """
+    field = condition.condition_field or "requested_days"
+    op = condition.condition_operator
+
+    if field == "leave_type":
+        if op not in ("equal", "notequal"):
+            return False
+        try:
+            wanted = int(condition.condition_value)
+        except (TypeError, ValueError):
+            return False
+        actual = leave_request.leave_type_id_id
+        return (actual == wanted) if op == "equal" else (actual != wanted)
+
+    requested_days = leave_request.requested_days
+    if op == "range":
+        try:
+            start_value = float(condition.condition_start_value)
+            end_value = float(condition.condition_end_value)
+        except (TypeError, ValueError):
+            return False
+        return start_value <= requested_days <= end_value
+    operator_func = operator_mapping.get(op)
+    if operator_func is None:
+        return False
+    try:
+        condition_value = type(requested_days)(condition.condition_value)
+    except (TypeError, ValueError):
+        return False
+    return bool(operator_func(requested_days, condition_value))
+
+
 # Create your models here.
 BREAKDOWN = [
     ("full_day", _("Full Day")),
@@ -1494,19 +1536,9 @@ class LeaveRequest(HorillaModel):
             ).order_by("condition_value")
         if conditions != None:
             for condition in conditions:
-                operator = condition.condition_operator
-                if operator == "range":
-                    start_value = float(condition.condition_start_value)
-                    end_value = float(condition.condition_end_value)
-                    if start_value <= requested_days <= end_value:
-                        applicable_condition = condition
-                        break
-                else:
-                    operator_func = operator_mapping.get(condition.condition_operator)
-                    condition_value = type(requested_days)(condition.condition_value)
-                    if operator_func(requested_days, condition_value):
-                        applicable_condition = condition
-                        break
+                if approval_condition_matches(condition, self):
+                    applicable_condition = condition
+                    break
 
         if applicable_condition and self.status == "requested":
             LeaveRequestConditionApproval.objects.filter(leave_request_id=self).delete()

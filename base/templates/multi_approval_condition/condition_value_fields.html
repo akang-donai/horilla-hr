@@ -1,4 +1,20 @@
-{% load i18n %} {% if range %}
+{% load i18n %}
+{% if condition_field == "leave_type" %}
+<div class="oh-input__group">
+  <label class="oh-label" for="{{ form.condition_value.id_for_label }}">
+    {% trans "Leave Type" %}
+  </label>
+  {# A foreign-key condition: the stored value is the leave type's id. #}
+  <select name="condition_value" id="{{ form.condition_value.id_for_label }}"
+          class="oh-select oh-select-2 mb-2" required>
+    <option value="">---------</option>
+    {% for lt in leave_types %}
+      <option value="{{ lt.id }}" {% if selected_value|stringformat:"s" == lt.id|stringformat:"s" %}selected{% endif %}>{{ lt.name }}</option>
+    {% endfor %}
+  </select>
+  {{ form.condition_value.errors }}
+</div>
+{% elif range %}
 <div class="row" id="conditionRangeValueRow">
   <div class="col-12 col-sm-12 col-md-6 col-lg-6">
     <div class="oh-input__group">
