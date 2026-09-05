@@ -67,7 +67,7 @@ from leave.methods import (
 )
 from leave.models import *
 from leave.models import leave_requested_dates
-from leave.services import evaluate_leave_type_conditions
+from leave.services import evaluate_leave_type_conditions, requestable_leave_types
 from leave.threading import LeaveMailSendThread
 from notifications.signals import notify
 
@@ -358,10 +358,7 @@ def get_employee_leave_types(request):
 
     if employee_id:
         employee = get_object_or_404(Employee, id=employee_id)
-        assigned_leave_types = LeaveType.objects.filter(
-            id__in=employee.available_leave.values_list("leave_type_id", flat=True)
-        )
-        form.fields["leave_type_id"].queryset = assigned_leave_types
+        form.fields["leave_type_id"].queryset = requestable_leave_types(employee)
     else:
         form.fields["leave_type_id"].queryset = LeaveType.objects.none()
 
@@ -433,11 +430,7 @@ def leave_request_creation(request, type_id=None, emp_id=None):
         )
 
         if employee:
-            leave_type_ids = employee.available_leave.values_list(
-                "leave_type_id", flat=True
-            )
-            assigned_leave_types = LeaveType.objects.filter(id__in=leave_type_ids)
-
+            assigned_leave_types = requestable_leave_types(employee)
             form.fields["leave_type_id"].queryset = assigned_leave_types
 
     if type_id and emp_id:

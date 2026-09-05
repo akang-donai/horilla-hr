@@ -1577,6 +1577,23 @@ class LeaveRequest(HorillaModel):
                 }
             )
 
+        # Assigned is not enough: the leave type's conditions must hold *now*.
+        # The request forms already hide ineligible types; this is the server-
+        # side gate for a stale form or a hand-built POST. Only new requests
+        # are gated so an existing request can still be edited/decided after
+        # the employee has become ineligible.
+        if not self.pk:
+            from leave.services import (
+                ASSIGN_TIME_ONLY_CONDITIONS,
+                evaluate_leave_type_conditions,
+            )
+
+            eligible, reason = evaluate_leave_type_conditions(
+                leave_type, self.employee_id, ignore_types=ASSIGN_TIME_ONLY_CONDITIONS
+            )
+            if not eligible:
+                raise ValidationError({"leave_type_id": reason})
+
         # Date validations
         if self.start_date > self.end_date:
             raise ValidationError(_("End date should not be less than start date."))

@@ -37,6 +37,7 @@ from leave.filters import LeaveRequestFilter
 from leave.forms import LeaveRequestCreationForm, LeaveRequestExportForm
 from leave.methods import filter_conditional_leave_request
 from leave.models import AvailableLeave, LeaveRequest, LeaveType
+from leave.services import requestable_leave_types
 from leave.threading import LeaveMailSendThread
 from leave.views import multiple_approvals_check
 from notifications.signals import notify
@@ -471,18 +472,11 @@ class LeaveRequestFormView(HorillaFormView):
             employee = self.request.user.employee_get
 
         if employee:
-            available_leaves = employee.available_leave.all()
-            assigned_leave_types = LeaveType.objects.filter(
-                id__in=available_leaves.values_list("leave_type_id", flat=True)
+            # Assigned AND currently eligible; keep the pre-selected type so a
+            # deep link / edit still resolves.
+            self.form.fields["leave_type_id"].queryset = requestable_leave_types(
+                employee, keep=leave_type_id
             )
-            if (
-                leave_type_id
-                and not assigned_leave_types.filter(id=leave_type_id).exists()
-            ):
-                assigned_leave_types = assigned_leave_types | LeaveType.objects.filter(
-                    id=leave_type_id
-                )
-            self.form.fields["leave_type_id"].queryset = assigned_leave_types
 
         self.form = choosesubordinates(
             self.request, self.form, "leave.add_leaverequest"

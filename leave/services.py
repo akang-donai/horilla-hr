@@ -10,13 +10,22 @@ from datetime import date
 from django.utils.translation import gettext_lazy as _
 
 
-def evaluate_leave_type_conditions(leave_type, employee):
+# Conditions that only make sense when a leave type is first assigned. At
+# request time an AvailableLeave row necessarily exists, so re-checking these
+# would hide every leave type that carries them.
+ASSIGN_TIME_ONLY_CONDITIONS = frozenset({"once_per_employment"})
+
+
+def evaluate_leave_type_conditions(leave_type, employee, ignore_types=()):
     """
     Evaluate all conditions configured on a LeaveType against an employee.
 
     Returns a (is_eligible, error_message) tuple.  When all conditions pass,
     returns (True, None).  On the first failing condition it returns
     (False, <translated error string>).
+
+    ``ignore_types`` skips condition types that do not apply in the caller's
+    context (see ``requestable_leave_types`` / ``ASSIGN_TIME_ONLY_CONDITIONS``).
 
     Usage::
 
@@ -28,6 +37,8 @@ def evaluate_leave_type_conditions(leave_type, employee):
 
     for condition in leave_type.conditions.all():
         ctype = condition.condition_type
+        if ctype in ignore_types:
+            continue
 
         if ctype == "gender":
             emp_gender = (getattr(employee, "gender", None) or "").lower()
@@ -128,6 +139,44 @@ def evaluate_leave_type_conditions(leave_type, employee):
                 ).format(years=condition.value, actual=tenure_years)
 
     return True, None
+
+
+def is_currently_eligible(leave_type, employee):
+    """
+    Live eligibility: does the employee satisfy the leave type's conditions
+    right now? Assign-time-only conditions are skipped.
+    """
+    ok, _msg = evaluate_leave_type_conditions(
+        leave_type, employee, ignore_types=ASSIGN_TIME_ONLY_CONDITIONS
+    )
+    return ok
+
+
+def requestable_leave_types(employee, keep=None):
+    """
+    Leave types the employee can request today: assigned (AvailableLeave
+    exists) AND currently eligible under the type's conditions. A type stops
+    appearing the moment a condition no longer holds and reappears when it
+    does, without touching the underlying assignment.
+
+    ``keep`` is a LeaveType (or id) to include regardless — used when editing
+    an existing request so HR can still open it if the employee has since
+    become ineligible.
+    """
+    from leave.models import AvailableLeave, LeaveType
+
+    if not employee:
+        return LeaveType.objects.none()
+    assigned = LeaveType.objects.filter(
+        id__in=AvailableLeave.objects.filter(employee_id=employee).values_list(
+            "leave_type_id", flat=True
+        )
+    ).prefetch_related("conditions")
+    eligible_ids = [lt.id for lt in assigned if is_currently_eligible(lt, employee)]
+    keep_id = getattr(keep, "id", keep)
+    if keep_id:
+        eligible_ids.append(keep_id)
+    return LeaveType.objects.filter(id__in=eligible_ids)
 
 
 def has_sufficient_leave_balance(available_leave, requested_days) -> bool:

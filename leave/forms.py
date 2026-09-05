@@ -28,6 +28,7 @@ from horilla_widgets.forms import HorillaForm, HorillaModelForm
 from horilla_widgets.widgets.horilla_multi_select_field import HorillaMultiSelectField
 from horilla_widgets.widgets.select_widgets import HorillaMultiSelectWidget
 from leave.methods import get_leave_day_attendance
+from leave.services import requestable_leave_types
 from leave.models import (
     AvailableLeave,
     LeaveAllocationRequest,
@@ -378,17 +379,11 @@ class LeaveRequestUpdationForm(BaseModelForm):
         leave_type = leave_request.leave_type_id
 
         if employee:
-            available_leaves = AvailableLeave.objects.filter(employee_id=employee)
-            assigned_leave_types = LeaveType.objects.filter(
-                id__in=available_leaves.values_list("leave_type_id", flat=True)
+            # Currently-eligible assigned types, plus the request's own type so
+            # an existing request stays editable after eligibility lapses.
+            self.fields["leave_type_id"].queryset = requestable_leave_types(
+                employee, keep=leave_type
             )
-
-            if leave_type and leave_type.id not in assigned_leave_types.values_list(
-                "id", flat=True
-            ):
-                assigned_leave_types |= LeaveType.objects.filter(id=leave_type.id)
-
-            self.fields["leave_type_id"].queryset = assigned_leave_types
 
         self.fields["leave_type_id"].widget.attrs.update(
             {
@@ -583,11 +578,7 @@ class UserLeaveRequestForm(BaseModelForm):
         super(UserLeaveRequestForm, self).__init__(*args, **kwargs)
         self.fields["attachment"].widget.attrs["accept"] = ".jpg, .jpeg, .png, .pdf"
         if employee:
-            available_leaves = AvailableLeave.objects.filter(employee_id=employee)
-            assigned_leave_types = LeaveType.objects.filter(
-                id__in=available_leaves.values_list("leave_type_id", flat=True)
-            )
-            self.fields["leave_type_id"].queryset = assigned_leave_types
+            self.fields["leave_type_id"].queryset = requestable_leave_types(employee)
         if leave_type:
             self.fields["leave_type_id"].queryset = LeaveType.objects.filter(
                 id=leave_type["leave_type_id"].id
@@ -711,11 +702,7 @@ class UserLeaveRequestCreationForm(BaseModelForm):
         super().__init__(*args, **kwargs)
         self.fields["attachment"].widget.attrs["accept"] = ".jpg, .jpeg, .png, .pdf"
         if employee:
-            available_leaves = AvailableLeave.objects.filter(employee_id=employee)
-            assigned_leave_types = LeaveType.objects.filter(
-                id__in=available_leaves.values_list("leave_type_id", flat=True)
-            )
-            self.fields["leave_type_id"].queryset = assigned_leave_types
+            self.fields["leave_type_id"].queryset = requestable_leave_types(employee)
 
         for field_name in [
             "leave_type_id",
