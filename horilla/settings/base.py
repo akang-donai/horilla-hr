@@ -38,7 +38,9 @@ HORILLA_ENV = env("HORILLA_ENV", default="")
 REDIS_URL = env("REDIS_URL", default=None)
 
 # When True, clock-in/out endpoints require a passing face verification.
-STRICT_FACE_ATTENDANCE = os.environ.get("STRICT_FACE_ATTENDANCE", "false").lower() == "true"
+STRICT_FACE_ATTENDANCE = (
+    os.environ.get("STRICT_FACE_ATTENDANCE", "false").lower() == "true"
+)
 
 # Default site ID for django.contrib.sites framework.
 SITE_ID = 1
