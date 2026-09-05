@@ -107,8 +107,12 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # Scopes each request to the caller's company. CompanyMiddleware cannot:
+    # it runs before DRF authenticates, so a token-authenticated request is
+    # still anonymous there and no company gets selected -- which makes
+    # HorillaCompanyManager skip tenant filtering entirely.
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "horilla_api.authentication.CompanyScopedJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
