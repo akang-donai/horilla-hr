@@ -1089,10 +1089,11 @@ class EmployeeAvailableLeaveTypeGetAPIView(APIView):
             raise serializers.ValidationError(e)
 
     def get(self, request, pk):
+        from leave.services import requestable_leave_types
+
         employee = self.get_employee(pk)
-        available_leave = employee.available_leave.all()
-        leave_type_ids = available_leave.values_list("leave_type_id", flat=True)
-        leave_types = LeaveType.objects.filter(id__in=leave_type_ids)
+        # Same rule as the web request forms: assigned AND currently eligible.
+        leave_types = requestable_leave_types(employee)
         paginator = PageNumberPagination()
         page = paginator.paginate_queryset(leave_types, request)
         serializer = LeaveTypeAllGetSerializer(page, many=True)

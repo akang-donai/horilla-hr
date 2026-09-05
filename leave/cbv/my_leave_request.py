@@ -32,6 +32,7 @@ from leave.methods import (
     holiday_dates_list,
 )
 from leave.models import AvailableLeave, LeaveRequest, LeaveType, leave_requested_dates
+from leave.services import requestable_leave_types
 from leave.threading import LeaveMailSendThread
 from notifications.signals import notify
 
@@ -49,8 +50,12 @@ class MyLeaveRequestView(TemplateView):
         context data
         """
         context = super().get_context_data(**kwargs)
+        # Balance cards carry a "request" button, so show only the leave types
+        # the employee can actually request today (assigned AND eligible).
+        employee = self.request.user.employee_get
         user_leave = AvailableLeave.objects.filter(
-            employee_id=self.request.user.employee_get
+            employee_id=employee,
+            leave_type_id__in=requestable_leave_types(employee),
         )
         context["user_leaves"] = user_leave
         return context
@@ -278,11 +283,11 @@ class MyLeaveRequestForm(HorillaFormView):
         context = super().get_context_data(**kwargs)
         self.request.my_leave_request = "my_leave_request"
         emp = self.request.user.employee_get
-        available_leaves = AvailableLeave.objects.filter(employee_id=emp)
-        assigned_leave_types = LeaveType.objects.filter(
-            id__in=available_leaves.values_list("leave_type_id", flat=True)
+        # Assigned AND currently eligible; an existing request keeps its own
+        # type so it stays editable after eligibility lapses.
+        self.form.fields["leave_type_id"].queryset = requestable_leave_types(
+            emp, keep=self.form.instance.leave_type_id_id
         )
-        self.form.fields["leave_type_id"].queryset = assigned_leave_types
         self.form.fields["employee_id"].initial = emp
 
         if self.form.instance.pk:
@@ -480,7 +485,10 @@ class MyLeaveRequestSingleForm(HorillaFormView):
         employee = self.request.user.employee_get
         resolved = resolve(self.request.path_info)
         leave_id = resolved.kwargs.get("leave")
-        leave_type = LeaveType.objects.filter(id=leave_id)
+        # Pin the form to the leave type the card was opened from — but only
+        # if the employee is currently eligible for it; otherwise the choice is
+        # empty and the server-side gate in LeaveRequest.clean() backs it up.
+        leave_type = requestable_leave_types(employee).filter(id=leave_id)
         form = self.form_class(
             initial={"employee_id": employee, "leave_type_id": leave_type.first()}
         )
